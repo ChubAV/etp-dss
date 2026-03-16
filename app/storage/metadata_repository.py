@@ -57,3 +57,41 @@ class MetadataRepository:
         result = await self._session.execute(stmt)
         await self._session.flush()
         return result.rowcount > 0
+
+    async def update_av_status(
+        self,
+        file_id: uuid.UUID,
+        av_status: str,
+        av_scanned_at: datetime | None = None,
+        av_engine: str | None = None,
+        av_report: dict | None = None,
+    ) -> None:
+        stmt = (
+            update(File)
+            .where(File.id == file_id)
+            .values(
+                av_status=av_status,
+                av_scanned_at=av_scanned_at,
+                av_engine=av_engine,
+                av_report=av_report,
+            )
+        )
+        await self._session.execute(stmt)
+        await self._session.flush()
+
+    async def update_after_promotion(self, file_id: uuid.UUID) -> None:
+        file = await self.get_by_id(file_id)
+        if file is None:
+            return
+        stmt = (
+            update(File)
+            .where(File.id == file_id)
+            .values(
+                bucket=file.target_bucket,
+                storage_key=file.target_key,
+                target_bucket=None,
+                target_key=None,
+            )
+        )
+        await self._session.execute(stmt)
+        await self._session.flush()
