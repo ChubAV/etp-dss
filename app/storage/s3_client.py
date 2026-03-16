@@ -57,6 +57,15 @@ class S3Client:
         async with self._client() as s3:
             await s3.delete_object(Bucket=bucket, Key=key)
 
+    async def get_object(self, bucket: str, key: str) -> bytes:
+        async with self._client() as s3:
+            resp = await s3.get_object(Bucket=bucket, Key=key)
+            return await resp["Body"].read()
+
+    async def head_object(self, bucket: str, key: str) -> dict:
+        async with self._client() as s3:
+            return await s3.head_object(Bucket=bucket, Key=key)
+
     async def head_bucket(self, bucket: str):
         async with self._client() as s3:
             await s3.head_bucket(Bucket=bucket)

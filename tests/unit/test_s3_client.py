@@ -53,3 +53,37 @@ async def test_generate_presigned_url(s3_client):
         expires_in=300,
     )
     assert url == "https://s3/presigned"
+
+
+async def test_get_object(s3_client):
+    mock_s3 = AsyncMock()
+    mock_body = AsyncMock()
+    mock_body.read = AsyncMock(return_value=b"file-content")
+    mock_s3.get_object = AsyncMock(return_value={"Body": mock_body})
+
+    mock_ctx = AsyncMock()
+    mock_ctx.__aenter__ = AsyncMock(return_value=mock_s3)
+    mock_ctx.__aexit__ = AsyncMock(return_value=False)
+
+    s3_client._session = MagicMock()
+    s3_client._session.create_client = MagicMock(return_value=mock_ctx)
+
+    result = await s3_client.get_object("test-bucket", "test-key")
+    assert result == b"file-content"
+    mock_s3.get_object.assert_called_once_with(Bucket="test-bucket", Key="test-key")
+
+
+async def test_head_object(s3_client):
+    mock_s3 = AsyncMock()
+    mock_s3.head_object = AsyncMock(return_value={"ContentLength": 1024, "ETag": '"abc123"'})
+
+    mock_ctx = AsyncMock()
+    mock_ctx.__aenter__ = AsyncMock(return_value=mock_s3)
+    mock_ctx.__aexit__ = AsyncMock(return_value=False)
+
+    s3_client._session = MagicMock()
+    s3_client._session.create_client = MagicMock(return_value=mock_ctx)
+
+    result = await s3_client.head_object("test-bucket", "test-key")
+    assert result["ContentLength"] == 1024
+    mock_s3.head_object.assert_called_once_with(Bucket="test-bucket", Key="test-key")
