@@ -1,4 +1,4 @@
-from prometheus_client import Counter, Histogram
+from prometheus_client import Counter, Gauge, Histogram
 
 UPLOAD_REQUESTS = Counter(
     "dss_upload_requests_total",
@@ -30,4 +30,21 @@ S3_OPERATIONS = Counter(
     "dss_s3_operations_total",
     "S3 operations",
     ["operation", "bucket", "status"],
+)
+
+AV_SCAN_DURATION = Histogram(
+    "dss_av_scan_duration_seconds",
+    "Duration of AV scans",
+    ["status", "engine"],
+)
+
+AV_SCAN_RESULTS = Counter(
+    "dss_av_scan_results_total",
+    "Total AV scan results",
+    ["status"],
+)
+
+QUARANTINE_FILES = Gauge(
+    "dss_quarantine_files_count",
+    "Number of files currently in quarantine",
 )
