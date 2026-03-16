@@ -32,20 +32,26 @@ async def lifespan(app: FastAPI):
     app.state.db_session_factory = async_sessionmaker(engine, expire_on_commit=False)
     app.state.redis = Redis.from_url(settings.redis_url, decode_responses=True)
     app.state.s3 = S3Client(
-        endpoint_url=settings.s3_endpoint, access_key=settings.s3_access_key,
-        secret_key=settings.s3_secret_key, region=settings.s3_region,
+        endpoint_url=settings.s3_endpoint,
+        access_key=settings.s3_access_key,
+        secret_key=settings.s3_secret_key,
+        region=settings.s3_region,
     )
 
     cache = CacheClient(app.state.redis)
     app.state.cache = cache
 
     app.state.upload_token_service = UploadTokenService(
-        secret=settings.upload_token_secret, algorithm=settings.upload_token_algorithm,
-        ttl_seconds=settings.upload_token_ttl_seconds, cache=cache,
+        secret=settings.upload_token_secret,
+        algorithm=settings.upload_token_algorithm,
+        ttl_seconds=settings.upload_token_ttl_seconds,
+        cache=cache,
     )
     app.state.download_token_service = DownloadTokenService(
-        secret=settings.download_token_secret, algorithm=settings.download_token_algorithm,
-        max_ttl_seconds=settings.download_token_max_ttl_seconds, cache=cache,
+        secret=settings.download_token_secret,
+        algorithm=settings.download_token_algorithm,
+        max_ttl_seconds=settings.download_token_max_ttl_seconds,
+        cache=cache,
     )
 
     yield

@@ -5,11 +5,30 @@ from app.domain.db_models import File
 
 def test_file_model_has_required_columns():
     required = [
-        "id", "original_name", "storage_key", "bucket", "content_type", "size_bytes",
-        "checksum_sha256", "checksum_gost", "owner_type", "owner_id", "version",
-        "s3_version_id", "is_latest", "previous_version_id", "visibility",
-        "av_status", "av_scanned_at", "av_engine", "av_report",
-        "uploaded_by", "uploaded_at", "deleted_at", "correlation_id", "metadata_",
+        "id",
+        "original_name",
+        "storage_key",
+        "bucket",
+        "content_type",
+        "size_bytes",
+        "checksum_sha256",
+        "checksum_gost",
+        "owner_type",
+        "owner_id",
+        "version",
+        "s3_version_id",
+        "is_latest",
+        "previous_version_id",
+        "visibility",
+        "av_status",
+        "av_scanned_at",
+        "av_engine",
+        "av_report",
+        "uploaded_by",
+        "uploaded_at",
+        "deleted_at",
+        "correlation_id",
+        "metadata_",
     ]
     columns = {c.key for c in File.__table__.columns}
     for col in required:

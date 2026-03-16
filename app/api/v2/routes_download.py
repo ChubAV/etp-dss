@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
@@ -15,7 +15,8 @@ router = APIRouter(prefix="/api/v2/documents", tags=["download"])
 
 @router.get("/download")
 async def download_file(
-    request: Request, token: str = Query(...),
+    request: Request,
+    token: str = Query(...),
     session: AsyncSession = Depends(get_db_session),
     file_service: FileService = Depends(get_file_service),
 ):
@@ -33,17 +34,23 @@ async def download_file(
 
 @router.post("/{file_id}/presigned-url", response_model=PresignedUrlResponse)
 async def create_presigned_url(
-    file_id: uuid.UUID, body: PresignedUrlRequest, request: Request,
+    file_id: uuid.UUID,
+    body: PresignedUrlRequest,
+    request: Request,
     session: AsyncSession = Depends(get_db_session),
     file_service: FileService = Depends(get_file_service),
     _: dict = Depends(require_scope("documents.read")),
 ):
     file = await file_service.get_file(file_id)
     url = await file_service.generate_presigned_url(
-        file_id=file_id, expires_in=body.expires_in_seconds, disposition=body.disposition,
+        file_id=file_id,
+        expires_in=body.expires_in_seconds,
+        disposition=body.disposition,
     )
     return PresignedUrlResponse(
         url=url,
-        expires_at=datetime.now(timezone.utc) + timedelta(seconds=body.expires_in_seconds),
-        file_id=file.id, content_type=file.content_type, size_bytes=file.size_bytes,
+        expires_at=datetime.now(UTC) + timedelta(seconds=body.expires_in_seconds),
+        file_id=file.id,
+        content_type=file.content_type,
+        size_bytes=file.size_bytes,
     )

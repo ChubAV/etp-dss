@@ -1,4 +1,5 @@
 import uuid
+
 import pytest
 
 
@@ -11,10 +12,13 @@ async def test_full_upload_download_cycle(client, service_token):
     resp = await client.post(
         "/api/v2/documents/upload-token",
         json={
-            "owner_type": "LOT", "owner_id": owner_id,
-            "visibility": "PRIVATE", "file_name": "test.pdf",
+            "owner_type": "LOT",
+            "owner_id": owner_id,
+            "visibility": "PRIVATE",
+            "file_name": "test.pdf",
             "content_type": "application/pdf",
-            "max_size_bytes": 20 * 1024 * 1024, "uploaded_by": uploaded_by,
+            "max_size_bytes": 20 * 1024 * 1024,
+            "uploaded_by": uploaded_by,
         },
         headers={"Authorization": f"Bearer {service_token}"},
     )

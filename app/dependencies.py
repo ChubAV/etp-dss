@@ -2,7 +2,6 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.file_service import FileService
-from app.storage.cache_client import CacheClient
 from app.storage.metadata_repository import MetadataRepository
 
 

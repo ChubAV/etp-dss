@@ -1,7 +1,12 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+
 from app.domain.exceptions import (
-    AVNotPassedError, FileNotFoundError, FileSizeExceededError, InvalidContentTypeError, TokenError,
+    AVNotPassedError,
+    FileNotFoundError,
+    FileSizeExceededError,
+    InvalidContentTypeError,
+    TokenError,
 )
 
 

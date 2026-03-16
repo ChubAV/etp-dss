@@ -42,7 +42,9 @@ async def test_is_token_blacklisted_redis_down_returns_true(cache, redis_mock):
 
 async def test_cache_presigned_url_includes_disposition(cache, redis_mock):
     await cache.cache_presigned_url("file-id", "inline", "https://s3/presigned", ttl_seconds=240)
-    redis_mock.set.assert_called_once_with("presigned:file-id:inline", "https://s3/presigned", ex=240)
+    redis_mock.set.assert_called_once_with(
+        "presigned:file-id:inline", "https://s3/presigned", ex=240
+    )
 
 
 async def test_get_cached_presigned_url_by_disposition(cache, redis_mock):

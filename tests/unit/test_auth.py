@@ -1,6 +1,8 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 import jwt
 import pytest
+
 from app.infrastructure.auth import decode_service_jwt, verify_scope
 
 SECRET = "test-service-jwt-secret-key"
@@ -8,10 +10,14 @@ SECRET = "test-service-jwt-secret-key"
 
 def _make_token(scopes, exp_delta=600):
     return jwt.encode(
-        {"sub": "notice-service", "scopes": scopes,
-         "iat": datetime.now(timezone.utc),
-         "exp": datetime.now(timezone.utc) + timedelta(seconds=exp_delta)},
-        SECRET, algorithm="HS256",
+        {
+            "sub": "notice-service",
+            "scopes": scopes,
+            "iat": datetime.now(UTC),
+            "exp": datetime.now(UTC) + timedelta(seconds=exp_delta),
+        },
+        SECRET,
+        algorithm="HS256",
     )
 
 

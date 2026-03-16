@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 
@@ -14,19 +14,27 @@ class DownloadTokenService:
         self._cache = cache
 
     def generate(
-        self, file_id: uuid.UUID, user_id: uuid.UUID,
-        version: int | None, disposition: str, expires_in_seconds: int,
+        self,
+        file_id: uuid.UUID,
+        user_id: uuid.UUID,
+        version: int | None,
+        disposition: str,
+        expires_in_seconds: int,
     ) -> str:
         ttl = min(expires_in_seconds, self._max_ttl_seconds)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return jwt.encode(
             {
-                "jti": str(uuid.uuid4()), "file_id": str(file_id),
-                "user_id": str(user_id), "version": version,
+                "jti": str(uuid.uuid4()),
+                "file_id": str(file_id),
+                "user_id": str(user_id),
+                "version": version,
                 "disposition": disposition,
-                "iat": now, "exp": now + timedelta(seconds=ttl),
+                "iat": now,
+                "exp": now + timedelta(seconds=ttl),
             },
-            self._secret, algorithm=self._algorithm,
+            self._secret,
+            algorithm=self._algorithm,
         )
 
     async def validate(self, token: str) -> dict:
@@ -42,6 +50,6 @@ class DownloadTokenService:
 
     async def consume(self, token: str) -> dict:
         payload = await self.validate(token)
-        remaining = max(int(payload["exp"] - datetime.now(timezone.utc).timestamp()), 1)
+        remaining = max(int(payload["exp"] - datetime.now(UTC).timestamp()), 1)
         await self._cache.blacklist_token(payload["jti"], ttl_seconds=remaining)
         return payload

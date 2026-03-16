@@ -17,7 +17,11 @@ logger = structlog.get_logger()
 
 class FileService:
     def __init__(
-        self, repo: MetadataRepository, s3: S3Client, cache: CacheClient, settings: Settings,
+        self,
+        repo: MetadataRepository,
+        s3: S3Client,
+        cache: CacheClient,
+        settings: Settings,
     ):
         self._repo = repo
         self._s3 = s3
@@ -25,9 +29,16 @@ class FileService:
         self._settings = settings
 
     async def upload(
-        self, file_stream: AsyncIterator[bytes], file_name: str, content_type: str,
-        size_bytes: int, owner_type: str, owner_id: uuid_mod.UUID,
-        visibility: str, uploaded_by: uuid_mod.UUID, correlation_id: str | None = None,
+        self,
+        file_stream: AsyncIterator[bytes],
+        file_name: str,
+        content_type: str,
+        size_bytes: int,
+        owner_type: str,
+        owner_id: uuid_mod.UUID,
+        visibility: str,
+        uploaded_by: uuid_mod.UUID,
+        correlation_id: str | None = None,
     ) -> File:
         validate_content_type(content_type, self._settings.allowed_content_types)
         validate_file_size(size_bytes, self._settings.max_file_size_mb)
@@ -48,7 +59,8 @@ class FileService:
 
         # Slice 1: upload to target bucket directly. Slice 2 changes to quarantine.
         bucket = (
-            self._settings.s3_bucket_public if visibility == "PUBLIC"
+            self._settings.s3_bucket_public
+            if visibility == "PUBLIC"
             else self._settings.s3_bucket_private
         )
 
@@ -56,15 +68,25 @@ class FileService:
         storage_key = f"{owner_type.lower()}/{owner_id}/{file_id}/1"
 
         s3_version_id = await self._s3.upload_object(
-            bucket=bucket, key=storage_key, body=file_bytes, content_type=content_type,
+            bucket=bucket,
+            key=storage_key,
+            body=file_bytes,
+            content_type=content_type,
         )
 
         file = File(
-            original_name=file_name, storage_key=storage_key,
-            bucket=bucket, content_type=content_type, size_bytes=len(file_bytes),
-            checksum_sha256=sha256_hex, checksum_gost=gost_hex,
-            owner_type=owner_type, owner_id=owner_id, visibility=visibility,
-            uploaded_by=uploaded_by, s3_version_id=s3_version_id,
+            original_name=file_name,
+            storage_key=storage_key,
+            bucket=bucket,
+            content_type=content_type,
+            size_bytes=len(file_bytes),
+            checksum_sha256=sha256_hex,
+            checksum_gost=gost_hex,
+            owner_type=owner_type,
+            owner_id=owner_id,
+            visibility=visibility,
+            uploaded_by=uploaded_by,
+            s3_version_id=s3_version_id,
             correlation_id=uuid_mod.UUID(correlation_id) if correlation_id else None,
         )
         file.id = file_id
@@ -79,12 +101,19 @@ class FileService:
         return file
 
     async def get_files_by_owner(
-        self, owner_type: str, owner_id: uuid_mod.UUID,
-        av_status: str | None = None, page: int = 1, page_size: int = 20,
+        self,
+        owner_type: str,
+        owner_id: uuid_mod.UUID,
+        av_status: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
     ) -> tuple[list[File], int]:
         return await self._repo.get_by_owner(
-            owner_type=owner_type, owner_id=owner_id,
-            av_status=av_status, page=page, page_size=min(page_size, 100),
+            owner_type=owner_type,
+            owner_id=owner_id,
+            av_status=av_status,
+            page=page,
+            page_size=min(page_size, 100),
         )
 
     async def soft_delete(self, file_id: uuid_mod.UUID) -> None:
@@ -93,11 +122,15 @@ class FileService:
         logger.info("file_deleted", file_id=str(file_id))
 
     async def generate_presigned_url(
-        self, file_id: uuid_mod.UUID, expires_in: int | None = None, disposition: str = "inline",
+        self,
+        file_id: uuid_mod.UUID,
+        expires_in: int | None = None,
+        disposition: str = "inline",
     ) -> str:
         file = await self.get_file(file_id)
         ttl = expires_in or (
-            self._settings.public_presigned_url_ttl_seconds if file.visibility == "PUBLIC"
+            self._settings.public_presigned_url_ttl_seconds
+            if file.visibility == "PUBLIC"
             else self._settings.presigned_url_ttl_seconds
         )
 
@@ -106,7 +139,12 @@ class FileService:
             return cached
 
         url = await self._s3.generate_presigned_url(
-            bucket=file.bucket, key=file.storage_key, expires_in=ttl, disposition=disposition,
+            bucket=file.bucket,
+            key=file.storage_key,
+            expires_in=ttl,
+            disposition=disposition,
         )
-        await self._cache.cache_presigned_url(str(file_id), disposition, url, ttl_seconds=max(ttl - 60, 60))
+        await self._cache.cache_presigned_url(
+            str(file_id), disposition, url, ttl_seconds=max(ttl - 60, 60)
+        )
         return url

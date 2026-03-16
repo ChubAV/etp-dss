@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,7 +52,7 @@ class MetadataRepository:
         stmt = (
             update(File)
             .where(File.id == file_id, File.deleted_at.is_(None))
-            .values(deleted_at=datetime.now(timezone.utc))
+            .values(deleted_at=datetime.now(UTC))
         )
         result = await self._session.execute(stmt)
         await self._session.flush()

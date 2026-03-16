@@ -23,10 +23,16 @@ def repo(session):
 
 async def test_create_file(repo, session):
     file = File(
-        original_name="test.pdf", storage_key="quarantine/test",
-        bucket="documents-quarantine", content_type="application/pdf",
-        size_bytes=1024, checksum_sha256="abc", checksum_gost="def",
-        owner_type="LOT", owner_id=uuid.uuid4(), uploaded_by=uuid.uuid4(),
+        original_name="test.pdf",
+        storage_key="quarantine/test",
+        bucket="documents-quarantine",
+        content_type="application/pdf",
+        size_bytes=1024,
+        checksum_sha256="abc",
+        checksum_gost="def",
+        owner_type="LOT",
+        owner_id=uuid.uuid4(),
+        uploaded_by=uuid.uuid4(),
     )
     await repo.create(file)
     session.add.assert_called_once_with(file)

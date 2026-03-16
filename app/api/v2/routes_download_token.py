@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +13,8 @@ router = APIRouter(prefix="/api/v2/documents", tags=["download-token"])
 
 @router.post("/download-token", response_model=DownloadTokenResponse, status_code=201)
 async def create_download_token(
-    body: DownloadTokenRequest, request: Request,
+    body: DownloadTokenRequest,
+    request: Request,
     session: AsyncSession = Depends(get_db_session),
     file_service: FileService = Depends(get_file_service),
     _: dict = Depends(require_scope("documents.issue_token")),
@@ -21,13 +22,17 @@ async def create_download_token(
     file = await file_service.get_file(body.file_id)
 
     token = request.app.state.download_token_service.generate(
-        file_id=body.file_id, user_id=body.user_id,
-        version=body.version, disposition=body.disposition,
+        file_id=body.file_id,
+        user_id=body.user_id,
+        version=body.version,
+        disposition=body.disposition,
         expires_in_seconds=body.expires_in_seconds,
     )
     return DownloadTokenResponse(
         download_token=token,
-        expires_at=datetime.now(timezone.utc) + timedelta(seconds=body.expires_in_seconds),
-        file_id=file.id, original_name=file.original_name,
-        content_type=file.content_type, size_bytes=file.size_bytes,
+        expires_at=datetime.now(UTC) + timedelta(seconds=body.expires_in_seconds),
+        file_id=file.id,
+        original_name=file.original_name,
+        content_type=file.content_type,
+        size_bytes=file.size_bytes,
     )

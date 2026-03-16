@@ -27,7 +27,10 @@ async def test_upload_object(s3_client):
     s3_client._session.create_client = MagicMock(return_value=mock_ctx)
 
     version_id = await s3_client.upload_object(
-        bucket="test-bucket", key="test-key", body=b"test-data", content_type="application/pdf",
+        bucket="test-bucket",
+        key="test-key",
+        body=b"test-data",
+        content_type="application/pdf",
     )
     assert version_id == "v1"
     mock_s3.put_object.assert_called_once()
@@ -45,6 +48,8 @@ async def test_generate_presigned_url(s3_client):
     s3_client._session.create_client = MagicMock(return_value=mock_ctx)
 
     url = await s3_client.generate_presigned_url(
-        bucket="test-bucket", key="test-key", expires_in=300,
+        bucket="test-bucket",
+        key="test-key",
+        expires_in=300,
     )
     assert url == "https://s3/presigned"

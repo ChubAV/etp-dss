@@ -2,8 +2,16 @@ import uuid as uuid_mod
 from datetime import datetime
 
 from sqlalchemy import (
-    BigInteger, Boolean, CheckConstraint, DateTime, ForeignKey,
-    Index, Integer, String, Uuid, text,
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Uuid,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
@@ -65,16 +73,20 @@ class File(Base):
         ),
         Index("idx_files_storage_key", "storage_key"),
         Index(
-            "idx_files_owner", "owner_type", "owner_id",
+            "idx_files_owner",
+            "owner_type",
+            "owner_id",
             postgresql_where=text("deleted_at IS NULL"),
         ),
         Index("idx_files_uploaded_by", "uploaded_by"),
         Index(
-            "idx_files_av_status", "av_status",
+            "idx_files_av_status",
+            "av_status",
             postgresql_where=text("av_status != 'CLEAN'"),
         ),
         Index(
-            "idx_files_visibility", "visibility",
+            "idx_files_visibility",
+            "visibility",
             postgresql_where=text("visibility = 'PUBLIC'"),
         ),
     )

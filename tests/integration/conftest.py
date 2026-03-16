@@ -1,11 +1,13 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://dss:password@localhost:5432/document_storage")
+os.environ.setdefault(
+    "DATABASE_URL", "postgresql+asyncpg://dss:password@localhost:5432/document_storage"
+)
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 os.environ.setdefault("S3_ENDPOINT", "http://localhost:9000")
 os.environ.setdefault("S3_ACCESS_KEY", "minioadmin")
@@ -18,6 +20,7 @@ os.environ.setdefault("DOWNLOAD_TOKEN_SECRET", "test-download-token-secret")
 @pytest_asyncio.fixture
 async def client():
     from app.main import app
+
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
 
@@ -27,9 +30,15 @@ def service_token():
     return jwt.encode(
         {
             "sub": "test-service",
-            "scopes": ["documents.issue_token", "documents.write", "documents.read", "documents.delete"],
-            "iat": datetime.now(timezone.utc),
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "scopes": [
+                "documents.issue_token",
+                "documents.write",
+                "documents.read",
+                "documents.delete",
+            ],
+            "iat": datetime.now(UTC),
+            "exp": datetime.now(UTC) + timedelta(hours=1),
         },
-        os.environ["SERVICE_JWT_SECRET"], algorithm="HS256",
+        os.environ["SERVICE_JWT_SECRET"],
+        algorithm="HS256",
     )

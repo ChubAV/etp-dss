@@ -28,13 +28,18 @@ class S3Client:
             return response.get("VersionId")
 
     async def generate_presigned_url(
-        self, bucket: str, key: str, expires_in: int = 300, disposition: str = "inline",
+        self,
+        bucket: str,
+        key: str,
+        expires_in: int = 300,
+        disposition: str = "inline",
     ) -> str:
         async with self._client() as s3:
             return await s3.generate_presigned_url(
                 "get_object",
                 Params={
-                    "Bucket": bucket, "Key": key,
+                    "Bucket": bucket,
+                    "Key": key,
                     "ResponseContentDisposition": disposition,
                 },
                 ExpiresIn=expires_in,
@@ -43,7 +48,8 @@ class S3Client:
     async def copy_object(self, src_bucket: str, src_key: str, dst_bucket: str, dst_key: str):
         async with self._client() as s3:
             await s3.copy_object(
-                Bucket=dst_bucket, Key=dst_key,
+                Bucket=dst_bucket,
+                Key=dst_key,
                 CopySource={"Bucket": src_bucket, "Key": src_key},
             )
 

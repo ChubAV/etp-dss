@@ -1,16 +1,16 @@
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class Visibility(str, Enum):
+class Visibility(StrEnum):
     PRIVATE = "PRIVATE"
     PUBLIC = "PUBLIC"
 
 
-class AVStatus(str, Enum):
+class AVStatus(StrEnum):
     PENDING = "PENDING"
     SCANNING = "SCANNING"
     CLEAN = "CLEAN"

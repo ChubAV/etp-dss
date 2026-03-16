@@ -25,7 +25,9 @@ async def require_service_jwt(
     settings = request.app.state.settings
     try:
         return decode_service_jwt(
-            authorization[7:], settings.service_jwt_secret, settings.service_jwt_algorithm,
+            authorization[7:],
+            settings.service_jwt_secret,
+            settings.service_jwt_algorithm,
         )
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
@@ -38,4 +40,5 @@ def require_scope(scope: str):
         except PermissionError as e:
             raise HTTPException(status_code=403, detail=str(e))
         return payload
+
     return checker

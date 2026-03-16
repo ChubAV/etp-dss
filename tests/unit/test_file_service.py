@@ -2,6 +2,7 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from app.domain.exceptions import FileNotFoundError as DSSFileNotFoundError
 from app.domain.file_service import FileService
 
@@ -37,10 +38,14 @@ async def test_upload_creates_file_record(service, deps):
 
     with patch("app.domain.file_service.compute_hashes", return_value=("sha256hex", "gosthex")):
         result = await service.upload(
-            file_stream=chunks(), file_name="test.pdf",
-            content_type="application/pdf", size_bytes=1024,
-            owner_type="LOT", owner_id=uuid.uuid4(),
-            visibility="PRIVATE", uploaded_by=uuid.uuid4(),
+            file_stream=chunks(),
+            file_name="test.pdf",
+            content_type="application/pdf",
+            size_bytes=1024,
+            owner_type="LOT",
+            owner_id=uuid.uuid4(),
+            visibility="PRIVATE",
+            uploaded_by=uuid.uuid4(),
         )
 
     assert result.original_name == "test.pdf"
@@ -53,12 +58,18 @@ async def test_upload_rejects_invalid_content_type(service):
     async def chunks():
         yield b"data"
 
-    with pytest.raises(ValueError, match="not allowed"):
+    from app.domain.exceptions import InvalidContentTypeError
+
+    with pytest.raises(InvalidContentTypeError, match="not allowed"):
         await service.upload(
-            file_stream=chunks(), file_name="test.zip",
-            content_type="application/zip", size_bytes=1024,
-            owner_type="LOT", owner_id=uuid.uuid4(),
-            visibility="PRIVATE", uploaded_by=uuid.uuid4(),
+            file_stream=chunks(),
+            file_name="test.zip",
+            content_type="application/zip",
+            size_bytes=1024,
+            owner_type="LOT",
+            owner_id=uuid.uuid4(),
+            visibility="PRIVATE",
+            uploaded_by=uuid.uuid4(),
         )
 
 
