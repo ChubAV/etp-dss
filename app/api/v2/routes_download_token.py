@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db_session, get_file_service
+from app.domain.exceptions import AVNotPassedError
 from app.domain.file_service import FileService
 from app.domain.schemas import DownloadTokenRequest, DownloadTokenResponse
 from app.infrastructure.auth import require_scope
@@ -20,6 +21,8 @@ async def create_download_token(
     _: dict = Depends(require_scope("documents.issue_token")),
 ):
     file = await file_service.get_file(body.file_id)
+    if file.av_status != "CLEAN":
+        raise AVNotPassedError(f"File {body.file_id} has not passed AV scan")
 
     token = request.app.state.download_token_service.generate(
         file_id=body.file_id,

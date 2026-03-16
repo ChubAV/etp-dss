@@ -6,6 +6,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db_session, get_file_service
+from app.domain.exceptions import AVNotPassedError
 from app.domain.file_service import FileService
 from app.domain.schemas import PresignedUrlRequest, PresignedUrlResponse
 from app.infrastructure.auth import require_scope
@@ -25,8 +26,13 @@ async def download_file(
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
+    file_id = uuid.UUID(payload["file_id"])
+    file = await file_service.get_file(file_id)
+    if file.av_status != "CLEAN":
+        raise AVNotPassedError(f"File {file_id} has not passed AV scan")
+
     url = await file_service.generate_presigned_url(
-        file_id=uuid.UUID(payload["file_id"]),
+        file_id=file_id,
         disposition=payload.get("disposition", "inline"),
     )
     return RedirectResponse(url=url, status_code=302)
@@ -42,6 +48,8 @@ async def create_presigned_url(
     _: dict = Depends(require_scope("documents.read")),
 ):
     file = await file_service.get_file(file_id)
+    if file.av_status != "CLEAN":
+        raise AVNotPassedError(f"File {file_id} has not passed AV scan")
     url = await file_service.generate_presigned_url(
         file_id=file_id,
         expires_in=body.expires_in_seconds,

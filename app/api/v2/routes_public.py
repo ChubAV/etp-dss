@@ -5,6 +5,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db_session, get_file_service
+from app.domain.exceptions import AVNotPassedError
 from app.domain.file_service import FileService
 
 router = APIRouter(prefix="/api/v2/documents", tags=["public"])
@@ -19,5 +20,7 @@ async def download_public_file(
     file = await file_service.get_file(file_id)
     if file.visibility != "PUBLIC":
         raise HTTPException(status_code=404, detail="File not found")
+    if file.av_status != "CLEAN":
+        raise AVNotPassedError(f"File {file_id} has not passed AV scan")
     url = await file_service.generate_presigned_url(file_id=file_id)
     return RedirectResponse(url=url, status_code=302)
