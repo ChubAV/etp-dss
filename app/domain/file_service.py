@@ -22,11 +22,13 @@ class FileService:
         s3: S3Client,
         cache: CacheClient,
         settings: Settings,
+        av_producer=None,
     ):
         self._repo = repo
         self._s3 = s3
         self._cache = cache
         self._settings = settings
+        self._av_producer = av_producer
 
     async def upload(
         self,
@@ -57,40 +59,59 @@ class FileService:
         sha256_hex, gost_hex = await compute_hashes(collecting_chunks())
         file_bytes = bytes(collected)
 
-        # Slice 1: upload to target bucket directly. Slice 2 changes to quarantine.
-        bucket = (
+        # Target bucket (where file goes after AV scan)
+        target_bucket = (
             self._settings.s3_bucket_public
             if visibility == "PUBLIC"
             else self._settings.s3_bucket_private
         )
-
         file_id = uuid_mod.uuid4()
-        storage_key = f"{owner_type.lower()}/{owner_id}/{file_id}/1"
+        target_key = f"{owner_type.lower()}/{owner_id}/{file_id}/1"
+
+        # Upload to quarantine
+        quarantine_bucket = self._settings.s3_bucket_quarantine
+        quarantine_key = str(file_id)
 
         s3_version_id = await self._s3.upload_object(
-            bucket=bucket,
-            key=storage_key,
+            bucket=quarantine_bucket,
+            key=quarantine_key,
             body=file_bytes,
             content_type=content_type,
         )
 
         file = File(
             original_name=file_name,
-            storage_key=storage_key,
-            bucket=bucket,
+            storage_key=quarantine_key,
+            bucket=quarantine_bucket,
             content_type=content_type,
             size_bytes=len(file_bytes),
             checksum_sha256=sha256_hex,
             checksum_gost=gost_hex,
             owner_type=owner_type,
             owner_id=owner_id,
-            visibility=visibility,
             uploaded_by=uploaded_by,
-            s3_version_id=s3_version_id,
-            correlation_id=uuid_mod.UUID(correlation_id) if correlation_id else None,
         )
         file.id = file_id
+        file.s3_version_id = s3_version_id
+        file.visibility = visibility
+        file.correlation_id = uuid_mod.UUID(correlation_id) if correlation_id else None
+        file.target_bucket = target_bucket
+        file.target_key = target_key
+        file.av_status = "SCANNING"
+
         file = await self._repo.create(file)
+
+        # Publish AV scan request
+        if self._av_producer:
+            await self._av_producer.publish(
+                file_id=file_id,
+                storage_key=quarantine_key,
+                bucket=quarantine_bucket,
+                content_type=content_type,
+                size_bytes=len(file_bytes),
+                correlation_id=str(correlation_id) if correlation_id else "",
+            )
+
         logger.info("file_uploaded", file_id=str(file.id), size=len(file_bytes))
         return file
 

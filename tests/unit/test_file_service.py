@@ -16,6 +16,7 @@ def deps():
     settings = MagicMock()
     settings.s3_bucket_private = "documents-private"
     settings.s3_bucket_public = "documents-public"
+    settings.s3_bucket_quarantine = "documents-quarantine"
     settings.max_file_size_mb = 20
     settings.allowed_content_types = ["application/pdf", "image/png"]
     settings.presigned_url_ttl_seconds = 300
@@ -77,6 +78,37 @@ async def test_get_file_not_found(service, deps):
     deps[0].get_by_id.return_value = None
     with pytest.raises(DSSFileNotFoundError):
         await service.get_file(uuid.uuid4())
+
+
+async def test_upload_uses_quarantine_bucket(service, deps):
+    repo, s3, cache, settings = deps
+    s3.upload_object = AsyncMock(return_value="v1")
+    repo.create = AsyncMock(side_effect=lambda f: f)
+
+    async def chunks():
+        yield b"file content"
+
+    with patch("app.domain.file_service.compute_hashes", return_value=("sha256hex", "gosthex")):
+        result = await service.upload(
+            file_stream=chunks(),
+            file_name="test.pdf",
+            content_type="application/pdf",
+            size_bytes=1024,
+            owner_type="APPLICATION",
+            owner_id=uuid.uuid4(),
+            visibility="PRIVATE",
+            uploaded_by=uuid.uuid4(),
+        )
+
+    # Verify upload went to quarantine bucket
+    upload_call = s3.upload_object.call_args
+    assert upload_call.kwargs["bucket"] == "documents-quarantine"
+
+    # Verify target info stored
+    assert result.target_bucket == "documents-private"
+    assert result.target_key is not None
+    assert result.bucket == "documents-quarantine"
+    assert result.av_status == "SCANNING"
 
 
 async def test_presigned_url_uses_disposition_cache_key(service, deps):
