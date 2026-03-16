@@ -11,7 +11,7 @@ app.add_middleware(CorrelationMiddleware)
 
 
 @app.get("/test")
-async def test_endpoint(request: Request):
+async def _test_endpoint(request: Request):
     return JSONResponse({"correlation_id": request.state.correlation_id})
 
 

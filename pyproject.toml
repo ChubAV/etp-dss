@@ -19,6 +19,7 @@ dependencies = [
     "aiohttp>=3.11.0",
     "aiokafka>=0.12.0",
     "python-multipart>=0.0.12",
+    "gostcrypto>=1.2.5",
 ]
 
 [project.optional-dependencies]
