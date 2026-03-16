@@ -8,6 +8,7 @@ from app.domain.db_models import File
 from app.domain.exceptions import FileNotFoundError
 from app.domain.hash_calculator import compute_hashes
 from app.domain.validators import validate_content_type, validate_file_size
+from app.infrastructure.metrics import QUARANTINE_FILES
 from app.storage.cache_client import CacheClient
 from app.storage.metadata_repository import MetadataRepository
 from app.storage.s3_client import S3Client
@@ -100,6 +101,7 @@ class FileService:
         file.av_status = "SCANNING"
 
         file = await self._repo.create(file)
+        QUARANTINE_FILES.inc()
 
         # Publish AV scan request
         if self._av_producer:

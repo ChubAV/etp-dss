@@ -34,6 +34,7 @@ def _make_file():
     file.target_bucket = "documents-private"
     file.target_key = "application/owner-id/file-id/1"
     file.checksum_sha256 = "a" * 64
+    file.size_bytes = 1024
     file.owner_type = "APPLICATION"
     file.owner_id = "owner-id"
     file.correlation_id = "corr-123"
@@ -66,6 +67,16 @@ async def test_promote_aborts_on_head_object_failure(service, s3, repo):
     file = _make_file()
     s3.head_object = AsyncMock(side_effect=Exception("S3 error"))
     with pytest.raises(Exception, match="S3 error"):
+        await service.promote(file)
+    s3.copy_object.assert_called_once()
+    s3.delete_object.assert_not_called()
+    repo.update_after_promotion.assert_not_called()
+
+
+async def test_promote_aborts_on_size_mismatch(service, s3, repo):
+    file = _make_file()
+    s3.head_object = AsyncMock(return_value={"ContentLength": 999})
+    with pytest.raises(RuntimeError, match="Size mismatch"):
         await service.promote(file)
     s3.copy_object.assert_called_once()
     s3.delete_object.assert_not_called()

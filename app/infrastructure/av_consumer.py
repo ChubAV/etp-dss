@@ -3,6 +3,7 @@ import structlog
 from app.domain.kafka_schemas import AVScanResult
 from app.domain.quarantine_service import QuarantineService
 from app.infrastructure.events import EventProducer
+from app.infrastructure.metrics import AV_SCAN_RESULTS
 from app.storage.metadata_repository import MetadataRepository
 
 logger = structlog.get_logger()
@@ -41,6 +42,7 @@ class AVResultConsumer:
             av_engine=result.engine,
             av_report=result.details.model_dump(),
         )
+        AV_SCAN_RESULTS.labels(status=result.status).inc()
         if result.status == "CLEAN":
             await self._quarantine.promote(file)
             logger.info("av_scan_clean", file_id=str(result.file_id))

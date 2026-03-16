@@ -23,14 +23,20 @@ async def process_scan_request(raw: bytes, s3, scanner, producer, result_topic: 
     logger.info("av_scan_started", file_id=str(file_id))
     data = await s3.get_object(request.bucket, request.storage_key)
     scan_result: ScanResult | None = None
-    for attempt, delay in enumerate(RETRY_DELAYS):
+    for attempt in range(len(RETRY_DELAYS)):
         try:
             scan_result = await scanner.scan(data)
             break
         except Exception:
-            logger.warning("av_scan_retry", file_id=str(file_id), attempt=attempt + 1, delay=delay)
-            if delay > 0:
-                await asyncio.sleep(delay)
+            logger.warning(
+                "av_scan_retry",
+                file_id=str(file_id),
+                attempt=attempt + 1,
+            )
+            if attempt < len(RETRY_DELAYS) - 1:
+                delay = RETRY_DELAYS[attempt]
+                if delay > 0:
+                    await asyncio.sleep(delay)
     if scan_result is not None:
         status = "CLEAN" if scan_result.clean else "INFECTED"
         result = AVScanResult(
@@ -82,13 +88,16 @@ async def main() -> None:
 
     async def _process_with_semaphore(msg_value: bytes) -> None:
         async with semaphore:
-            await process_scan_request(
-                raw=msg_value,
-                s3=s3,
-                scanner=scanner,
-                producer=producer,
-                result_topic=settings.kafka_topic_av_result,
-            )
+            try:
+                await process_scan_request(
+                    raw=msg_value,
+                    s3=s3,
+                    scanner=scanner,
+                    producer=producer,
+                    result_topic=settings.kafka_topic_av_result,
+                )
+            except Exception:
+                logger.exception("av_worker_task_failed")
 
     try:
         async for msg in consumer:
