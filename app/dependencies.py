@@ -11,7 +11,7 @@ async def get_db_session(request: Request):
         yield session
 
 
-async def get_file_service(
+def get_file_service(
     request: Request,
     session: AsyncSession = Depends(get_db_session),
 ) -> FileService:
@@ -20,4 +20,5 @@ async def get_file_service(
         s3=request.app.state.s3,
         cache=request.app.state.cache,
         settings=request.app.state.settings,
+        av_producer=getattr(request.app.state, "av_task_producer", None),
     )
