@@ -52,3 +52,9 @@ def test_file_model_defaults():
     assert f.is_latest is True
     assert f.visibility == "PRIVATE"
     assert f.av_status == "PENDING"
+
+
+def test_file_model_has_target_fields():
+    columns = {c.name for c in File.__table__.columns}
+    assert "target_bucket" in columns
+    assert "target_key" in columns

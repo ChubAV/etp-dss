@@ -54,6 +54,12 @@ class File(Base):
     )
     av_engine: Mapped[str | None] = mapped_column(String(100), nullable=True, default=None)
     av_report: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    target_bucket: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, init=False, default=None
+    )
+    target_key: Mapped[str | None] = mapped_column(
+        String(1000), nullable=True, init=False, default=None
+    )
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), init=False
     )
